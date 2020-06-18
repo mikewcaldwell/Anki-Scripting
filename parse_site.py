@@ -9,7 +9,7 @@ from urllib.parse import urljoin
  
 class WordInfo:
     def __init__(
-        self, 
+        self,
         word, 
         translation, 
         definition, 
@@ -28,10 +28,16 @@ class WordInfo:
         self.picture = picture
 
     def __str__(self):
-        return f'''Word: {self.word}, Pronunciation: {self.pronunciation}, Audio: {self.audio} 
-        Additional Info: {self.additional_info}, Picture: {self.picture}
-        Examples: {self.example_sentences}
-        '''
+        sentence_string = ''
+        for sentence in self.example_sentences:
+            sentence_string += f'\t {str(sentence)}'
+        return f'''Word: {self.word}
+    Translation: {self.translation}
+    Pronunciation: {self.pronunciation}
+    Audio: {self.audio} 
+    Additional Info: {self.additional_info}\t
+    Picture: {self.picture}
+    Examples:\n {sentence_string}'''
 
 class SentenceInfo:
     def __init__(self, sentence, translation, pronunciation, audio, grammar_used):
@@ -40,11 +46,23 @@ class SentenceInfo:
         self.pronunciation = pronunciation
         self.audio = audio
         self.grammar_used = grammar_used
-
+    
+    def __str__(self):
+        grammar_string = ''
+        for grammar in self.grammar_used:
+            grammar_string += str(grammar)
+        return f'''Sentence: {self.sentence}
+            Translation: {self.translation}
+            Pronunciation: {self.pronunciation}
+            Audio: {self.audio} 
+            Grammar:\n {grammar_string}'''
+    
 class GrammarInfo:
-    def __init__(self, grammar_point, grammar_explanation):
-        self.grammar_point = grammar_point
-        self.grammar_explanation = grammar_explanation
+    def __init__(self, point, explanation):
+        self.point = point
+        self.explanation = explanation
+    def __str__(self):
+        return f'               Grammar Point: {self.point}, Explanation: {self.explanation}'
 
 def parse_grammars(grammar_set):
     grammar_used=[]
@@ -101,10 +119,10 @@ def parse_site(url, use_cache):
     return words
 
 def download_file(url, local_path):
+    #make a path that looks like: http://chugokugo-script.net/tango/level1/../audio/人.mp3
     filename = url.split('/').pop()
     local_path = Path(local_path) / filename
 
-    #http://chugokugo-script.net/tango/level1/../audio/人.mp3
     if not local_path.exists():
         content = requests.get(url).content          
         local_path.write_bytes(content)
@@ -124,7 +142,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     words = parse_site(args.url, True)
     download_audio_files(words, args.url, args.media_folder)
-    for word in words:
-        print(word)
 
     
