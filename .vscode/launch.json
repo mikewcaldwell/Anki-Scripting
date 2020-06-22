@@ -4,13 +4,24 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
         {
             "name": "Python: parse_site.py",
             "type": "python",
             "request": "launch",
-            "program": "parse_site.py",
+            "program": "/Users/mike/localrepo/anki-scripting/parse_site.py",
             "console": "integratedTerminal",
-            "args": ["http://chugokugo-script.net/tango/level1/meishi.html", "/Users/mike/Downloads/media"]
+            "args": [
+                "http://chugokugo-script.net/tango/level1/meishi.html",
+                "/Users/mike/Downloads/media"
+            ]
         }
     ]
 }

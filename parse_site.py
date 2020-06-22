@@ -18,10 +18,10 @@ class WordInfo:
         example_sentences, 
         additional_info, 
         picture):
-
         self.word = word
         self.translation = translation
         self.pronunciation = pronunciation
+        self.definition = definition
         self.audio = audio
         self.example_sentences = example_sentences
         self.additional_info = additional_info
@@ -38,6 +38,19 @@ class WordInfo:
     Additional Info: {self.additional_info}\t
     Picture: {self.picture}
     Examples:\n {sentence_string}'''
+
+    def get_audio_file_name(self):
+        return Path(self.audio).name
+    
+    def get_audio_files(self):
+        audio_file_names = []
+        if Path(self.audio).exists():
+            audio_file_names.append(self.audio)
+        for sentence in self.example_sentences:
+            if Path(sentence.audio).exists():
+                audio_file_names.append(sentence.audio)
+        return audio_file_names
+        
 
 class SentenceInfo:
     def __init__(self, sentence, translation, pronunciation, audio, grammar_used):
@@ -57,6 +70,9 @@ class SentenceInfo:
             Audio: {self.audio} 
             Grammar:\n {grammar_string}'''
     
+    def get_audio_file_name(self):
+        return Path(self.audio).name
+
 class GrammarInfo:
     def __init__(self, point, explanation):
         self.point = point
@@ -64,7 +80,7 @@ class GrammarInfo:
     def __str__(self):
         return f'               Grammar Point: {self.point}, Explanation: {self.explanation}'
 
-def parse_grammars(grammar_set):
+def __parse_grammars(grammar_set):
     grammar_used=[]
     for grammar_html in grammar_set:
         grammar_item = grammar_html.summary.string
@@ -72,53 +88,65 @@ def parse_grammars(grammar_set):
         grammar_used.append(GrammarInfo(grammar_item, grammar_explanation)) 
     return grammar_used
 
-def parse_sentences(sentence_set):
+def __parse_sentences(sentence_set):
     example_sentences=[]
     for sentence_html in sentence_set:
         sentence = sentence_html.find(class_='divBunruiExC').string
         translation = sentence_html.find(class_='divBunruiExN').string
         pronunciation = sentence_html.find(class_='divBunruiExP').string
         audio = sentence_html.find(class_='divBunruiExA').audio.source['src']
-        grammar_used = parse_grammars(sentence_html.find_all(class_='detailsExBunpou'))
+        grammar_used = __parse_grammars(sentence_html.find_all(class_='detailsExBunpou'))
         example_sentences.append(SentenceInfo(sentence,translation,pronunciation,audio,grammar_used))
     return example_sentences
 
-def parse_word(word_html):
+def __parse_word(word_html):
     word = word_html.find(class_='divBunruiC').string
     translation = word_html.find(class_='divBunruiN').string
     pronunciation = word_html.find(class_='divBunruiP').string
     audio = word_html.find(class_='divBunruiA').audio.source['src']
-    example_sentences = parse_sentences(word_html.find_all(class_='divBunruiExMain'))
-    word_info = WordInfo(word,translation,None,pronunciation,audio,example_sentences,None,None)
+    example_sentences = __parse_sentences(word_html.find_all(class_='divBunruiExMain'))
+    word_info = WordInfo(word,translation,'',pronunciation,audio,example_sentences,'','')
     return word_info
 
-def fetch_text(url):
+def __fetch_text(url):
     page = requests.get(url)
     #need to enforce utf-8 or else encoding is messed up
     page.encoding = 'utf-8'
     return page.text
 
-def parse_site(url, use_cache):
-    #this page doesn't change very often if at all, so just cache it
-    if use_cache:
-        local_path = Path('cache.html')
-        if not local_path.exists():
-            text = fetch_text(url)
-            local_path.write_text(text)
-        else:
-            text = local_path.read_text()
-    else:
-        text = fetch_text(url)
-    
+def __parse_text(text):
     soup = BeautifulSoup(text, 'html.parser')
     word_set = soup.find_all('div', { 'class': 'divBunruiRight'})
     words = []
     for word_html in word_set:
-        word_info = parse_word(word_html)
+        word_info = __parse_word(word_html)
         words.append(word_info)
     return words
 
-def download_file(url, local_path):
+def __parse_site(url, use_cache):
+    #this page doesn't change very often if at all, so just cache it
+    if use_cache:
+        cache_dir = Path('./cache')
+        if not cache_dir.exists():
+            cache_dir.mkdir()
+
+        filename = url.split('/').pop()
+        local_path = cache_dir/ filename
+        if not local_path.exists():
+            text = __fetch_text(url)
+            local_path.write_text(text)
+        else:
+            text = local_path.read_text()
+    else:
+        text = __fetch_text(url)
+    return __parse_text(text)
+
+def __parse_file(file):
+    local_path = Path(file)
+    text = local_path.read_text()
+    return __parse_text(text)
+
+def __download_file(url, local_path):
     #make a path that looks like: http://chugokugo-script.net/tango/level1/../audio/人.mp3
     filename = url.split('/').pop()
     local_path = Path(local_path) / filename
@@ -128,11 +156,22 @@ def download_file(url, local_path):
         local_path.write_bytes(content)
     return str(local_path)
 
-def download_audio_files(words, base_url, media_folder):
+def __download_audio_files(words, base_url, media_folder):
     for word in words:
-        word.audio = download_file(urljoin(base_url, word.audio), media_folder) 
+        word.audio = __download_file(urljoin(base_url, word.audio), media_folder) 
         for sentence in word.example_sentences:
-            sentence.audio = download_file(urljoin(base_url, sentence.audio), media_folder)
+            sentence.audio = __download_file(urljoin(base_url, sentence.audio), media_folder)
+
+def parse(url, use_cache, media_folder):
+    words = __parse_site(url, use_cache)
+    if media_folder is None:
+        return words
+    
+    media_folder_path = Path(media_folder)
+    if not media_folder_path.exists():
+        media_folder_path.mkdir()
+    __download_audio_files(words, url, media_folder)
+    return words
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Go to a website and retrieve word information')
@@ -140,7 +179,6 @@ if __name__ == "__main__":
     parser.add_argument('media_folder', help='Folder to store media (images, audio, etc.)')
 
     args = parser.parse_args()
-    words = parse_site(args.url, True)
-    download_audio_files(words, args.url, args.media_folder)
-
-    
+    words = parse(args.url, True, args.media_folder)
+    for word in words:
+        print(word)
