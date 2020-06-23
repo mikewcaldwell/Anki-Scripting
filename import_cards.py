@@ -3,9 +3,12 @@ import parse_site
 import sys, os
 import functools
 import genanki
+import random
+import argparse
+from pathlib import Path
 
 word_model = genanki.Model(
-    2042686211,
+    random.randrange(1 << 30, 1 << 31),
     '中国語の単語',
     css='''.card {
         font-family: arial;
@@ -73,7 +76,7 @@ word_model = genanki.Model(
 
 #sentence, pinyin, translation, audio [sound:ex东西.mp3], grammar     
 sentence_model = genanki.Model(
-    2042686212,
+    random.randrange(1 << 30, 1 << 31),
     '中国語の文章',
     css='''.card {
         font-family: arial;
@@ -158,19 +161,44 @@ def import_sentences(sentences, deck):
         )
         deck.add_note(aNote) 
 
-if __name__ == "__main__":
+def create_chinese_deck(deck_name, url, media_folder):
     deck = genanki.Deck(
-        1724897887,
-        'Chinese')
-    user_media_folder = "/Users/mike/Downloads/media"
-    site_data = parse_site.parse(
-        "http://chugokugo-script.net/tango/level1/meishi.html", 
-        True, 
-        user_media_folder)
-    import_words(site_data, deck)
+        random.randrange(1 << 30, 1 << 31),
+        deck_name)
+    words = parse_site.parse(
+        url,
+        True,
+        media_folder)
+    import_words(words, deck)
+    return deck, words
+
+def create_anki_package(media_folder, output, level):
+    noun_deck, nouns = create_chinese_deck(
+        f'中国語単語 レベル{level}::1. 名詞・代詞・量詞', 
+        f'http://chugokugo-script.net/tango/level{level}/meishi.html',
+        media_folder)
+    verb_deck, verbs = create_chinese_deck(
+        f'中国語単語 レベル{level}::2. 動詞・助動詞・助詞', 
+        f'http://chugokugo-script.net/tango/level{level}/doushi.html',
+        media_folder)
+    adj_deck, adjectives = create_chinese_deck(
+        f'中国語単語 レベル{level}::3. 形容詞・副詞・その他', 
+        f'http://chugokugo-script.net/tango/level{level}/keiyoushi.html',
+        media_folder)
+    
     media_files = []
-    for word in site_data:
+    for word in (nouns + verbs + adjectives):
         media_files += word.get_audio_files()
-    my_package = genanki.Package(deck)
-    my_package.media_files = media_files
-    my_package.write_to_file('/Users/mike/Chinese_with_media_test.apkg')
+    
+    my_package = genanki.Package([noun_deck, verb_deck, adj_deck], media_files)
+    output_path = Path(output) / f'Chinese_Level_{level}.apkg'
+    my_package.write_to_file(output_path)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Create an anki deck based on data from Chinese for Japanese speakers website.')
+    parser.add_argument('media_folder', help='Folder to store media (images, audio, etc.)')
+    parser.add_argument('output', help='Output folder for package file.')
+    parser.add_argument('level', type=int, choices=[1,2,3])
+    args = parser.parse_args()
+    
+    create_anki_package(args.media_folder, args.output, args.level)

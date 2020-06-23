@@ -83,8 +83,10 @@ class GrammarInfo:
 def __parse_grammars(grammar_set):
     grammar_used=[]
     for grammar_html in grammar_set:
-        grammar_item = grammar_html.summary.string
-        grammar_explanation = grammar_html.div.string
+        grammar_item = grammar_html.summary.string or ''
+        grammar_explanation = grammar_html.div.string or ''
+        if grammar_item == '' and grammar_explanation == '':
+            continue
         grammar_used.append(GrammarInfo(grammar_item, grammar_explanation)) 
     return grammar_used
 
@@ -92,7 +94,9 @@ def __parse_sentences(sentence_set):
     example_sentences=[]
     for sentence_html in sentence_set:
         sentence = sentence_html.find(class_='divBunruiExC').string
-        translation = sentence_html.find(class_='divBunruiExN').string
+        if sentence in [None, '']:
+            continue
+        translation = sentence_html.find(class_='divBunruiExN').string or ''
         pronunciation = sentence_html.find(class_='divBunruiExP').string
         audio = sentence_html.find(class_='divBunruiExA').audio.source['src']
         grammar_used = __parse_grammars(sentence_html.find_all(class_='detailsExBunpou'))
@@ -126,12 +130,14 @@ def __parse_text(text):
 def __parse_site(url, use_cache):
     #this page doesn't change very often if at all, so just cache it
     if use_cache:
-        cache_dir = Path('./cache')
-        if not cache_dir.exists():
-            cache_dir.mkdir()
+        parts = url.split('/')
+        filename = parts.pop()
+        subpath = parts.pop()
 
-        filename = url.split('/').pop()
-        local_path = cache_dir/ filename
+        cache_dir  = Path('./cache') / subpath
+        cache_dir.mkdir(parents=True, exist_ok=True)
+          
+        local_path = cache_dir / filename
         if not local_path.exists():
             text = __fetch_text(url)
             local_path.write_text(text)

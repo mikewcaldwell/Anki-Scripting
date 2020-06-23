@@ -19,8 +19,20 @@
             "program": "/Users/mike/localrepo/anki-scripting/parse_site.py",
             "console": "integratedTerminal",
             "args": [
-                "http://chugokugo-script.net/tango/level1/meishi.html",
+                "http://chugokugo-script.net/tango/level1/keiyoushi.html",
                 "/Users/mike/Downloads/media"
+            ]
+        },
+        {
+            "name": "Python: import_cards.py",
+            "type": "python",
+            "request": "launch",
+            "program": "/Users/mike/localrepo/anki-scripting/import_cards.py",
+            "console": "integratedTerminal",
+            "args": [
+                "/Users/mike/Downloads/media",
+                "/Users/mike/Downloads",
+                "3"
             ]
         }
     ]
