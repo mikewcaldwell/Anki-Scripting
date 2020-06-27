@@ -52,6 +52,7 @@ word_model = genanki.Model(
                     {{#定義（中国語）}}<div style='font-family: Arial; font-size: 20px;'>定義：{{定義（中国語）}}</div>{{/定義（中国語）}}
                     <br><button id="hintbutton">翻訳を示す</button>
                     <div class='hint' id="grammar" style="display:none">翻訳<br>{{翻訳}}</div>
+                    <script type="text/javascript" src="_script.jquery-3.5.1.min.js"></script>
                     <script>
                     $("#hintbutton").click(function(){
                         $("#hintbutton").fadeOut();
@@ -111,6 +112,7 @@ sentence_model = genanki.Model(
                     <div class='hint' id='translation' style='display:none; font-family: Arial; font-size: 20px;'>翻訳<br>{{翻訳}}</div>
                     <br><button id="grammarbutton">文法を示す</button>
                     <div id="grammar" class='hint' style="display:none">文法<br>{{文法}}</div>
+                    <script type="text/javascript" src="_script.jquery-3.5.1.min.js"></script>
                     <script>
                     $("#grammarbutton").click(function(){
                         $("#grammarbutton").fadeOut();
@@ -190,6 +192,11 @@ def create_anki_package(media_folder, output, level):
     for word in (nouns + verbs + adjectives):
         media_files += word.get_audio_files()
     
+    jquery_file = parse_site.download_file(
+        'https://code.jquery.com/jquery-3.5.1.min.js', 
+        media_folder, 
+        filename = '_script.jquery-3.5.1.min.js')
+    media_files.append(jquery_file)
     my_package = genanki.Package([noun_deck, verb_deck, adj_deck], media_files)
     output_path = Path(output) / f'Chinese_Level_{level}.apkg'
     my_package.write_to_file(output_path)

@@ -152,9 +152,11 @@ def __parse_file(file):
     text = local_path.read_text()
     return __parse_text(text)
 
-def __download_file(url, local_path):
+def download_file(url, local_path, filename = None):
     #make a path that looks like: http://chugokugo-script.net/tango/level1/../audio/人.mp3
-    filename = url.split('/').pop()
+    if not filename:
+        filename = url.split('/').pop()
+    
     local_path = Path(local_path) / filename
 
     if not local_path.exists():
@@ -164,9 +166,9 @@ def __download_file(url, local_path):
 
 def __download_audio_files(words, base_url, media_folder):
     for word in words:
-        word.audio = __download_file(urljoin(base_url, word.audio), media_folder) 
+        word.audio = download_file(urljoin(base_url, word.audio), media_folder) 
         for sentence in word.example_sentences:
-            sentence.audio = __download_file(urljoin(base_url, sentence.audio), media_folder)
+            sentence.audio = download_file(urljoin(base_url, sentence.audio), media_folder)
 
 def parse(url, use_cache, media_folder):
     words = __parse_site(url, use_cache)
