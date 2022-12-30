@@ -5,6 +5,7 @@ import random
 import argparse
 from pathlib import Path
 
+#a model focused around a word, which create 2 cards.
 word_model = genanki.Model(
     random.randrange(1 << 30, 1 << 31),
     '中国語の単語',
@@ -28,19 +29,19 @@ word_model = genanki.Model(
             font-size: 50px;
         }''',
     fields=[
-        {'name': '単語'},
-        {'name': '翻訳'},
-        {'name': '写真'},
-        {'name': '定義 (中国語）'},
-        {'name': 'ピンイン'},
-        {'name': '発音（ファイル）'},
-        {'name': '文章（単語なし）'},
-        {'name': '他の情報（単語がある文章が含む）'},
+        {'name': '単語'}, #word
+        {'name': '翻訳'}, #translation
+        {'name': '写真'}, #picture
+        {'name': '定義 (中国語）'}, #definition in Chinese
+        {'name': 'ピンイン'}, #pinyin
+        {'name': '発音（ファイル）'}, #audio file
+        {'name': '文章（単語なし）'}, #example sentence
+        {'name': '他の情報（単語がある文章が含む）'}, #additional information
     ],
     templates=[
         {
             'name': 'Card 1',
-            'qfmt': '{{単語}}',
+            'qfmt': '{{単語}}', #Front of Card 1 is just the word.
             'afmt': '''{{FrontSide}}
                     <hr id=answer>
 
@@ -69,7 +70,7 @@ word_model = genanki.Model(
                     </script>''',
         },
         {
-            'name': 'Card 2',
+            'name': 'Card 2', #the second card has the user guess the missing word.
             'qfmt': '''単語は何ですか？
                     <div style='font-family: Arial; font-size: 20px;'>
                         {{文章（単語なし）}}
@@ -93,7 +94,7 @@ word_model = genanki.Model(
         },
     ])
 
-#sentence, pinyin, translation, audio [sound:ex东西.mp3], grammar     
+#a model focused on a sentence, which makes 1 card.     
 sentence_model = genanki.Model(
     random.randrange(1 << 30, 1 << 31),
     '中国語の文章',
@@ -113,15 +114,15 @@ sentence_model = genanki.Model(
         background-color: lightgreen;
         }''',
     fields=[
-        {'name': '文章'},
-        {'name': 'ピンイン'},
-        {'name': '翻訳'},
-        {'name': '発音（ファイル）'},
-        {'name': '文法'},
+        {'name': '文章'}, #example sentence
+        {'name': 'ピンイン'}, #pinyin for the sentence
+        {'name': '翻訳'}, #translation
+        {'name': '発音（ファイル）'}, #audio file for the sentence
+        {'name': '文法'}, #grammar used in the sentence
     ],
     templates=[
         {
-            'name': 'Card 1',
+            'name': 'Card 1', #this card plays a sentence audio file and the user must guess the meaning.
             'qfmt': '''<div style="font-family: Arial; font-size: 20px;">
                             {{発音（ファイル）}}
                         </div>''',
@@ -259,7 +260,10 @@ def create_chugokugo_anki_package(media_folder, output_dir, level):
     media_files.append(jquery_file)
 
     my_package = genanki.Package([noun_deck, verb_deck, adj_deck], media_files)
-    output_path = Path(output_dir) / f'Chinese_Level_{level}.apkg'
+    output_dir = Path(output_dir)
+    if not output_dir.exists():
+        output_dir.mkdir()
+    output_path = output_dir / f'Chinese_Level_{level}.apkg'
     my_package.write_to_file(output_path)
 
 if __name__ == "__main__":
